@@ -210,100 +210,167 @@ function expand(s,n,stringify){
       }
     }
     for (var i=0;i<=actualCutHeight;i++) result[i].pop(); //cut child
+    if (!result[result.length-1].length) result.pop();
     var afterCutHeight=result.length;
     var afterCutMountain=cloneMountain(result);
+    var afterCutLength=result[0].length;
+    var badRootSeamHeight=afterCutHeight-1;
+    while (true){
+      var l=0;
+      while (mountain[badRootSeamHeight][l]&&mountain[badRootSeamHeight][l].position+badRootSeamHeight<badRootSeam) l++;
+      if (mountain[badRootSeamHeight][l]&&mountain[badRootSeamHeight][l].position+badRootSeamHeight==badRootSeam) break;
+      badRootSeamHeight--;
+    }
+    badRootSeamHeight++;
     //Create Mt.Fuji shell
     for (var i=1;i<=n;i++){ //iteration
-      for (var j=0;j<badRootHeight+(cutHeight-badRootHeight)*(i+!yamakazi)+(afterCutHeight-cutHeight);j++){ //height
-        //alert(j)
-        if (!result[j]) result.push([]);
-        if (j<badRootHeight){ //Bb
-          var sourceHeight=j;
-          var workLayer=mountain[sourceHeight];
-          var cutWorkLayer=afterCutMountain[sourceHeight];
-          var badRootIndex=0;
-          while (workLayer[badRootIndex]&&workLayer[badRootIndex].position+sourceHeight<badRootSeam) badRootIndex++;
-          var k=badRootIndex;
-          while (k<cutWorkLayer.length){
-            var sourceParentIndex=workLayer[k].position+sourceHeight==badRootSeam?workLayer[workLayer.length-1].parentIndex:workLayer[k].parentIndex;
-            var parentShifts=workLayer[k].position+sourceHeight==badRootSeam?i-1:i;
-            var parentPosition=workLayer[sourceParentIndex]?workLayer[sourceParentIndex].position+parentShifts*(afterCutMountain[0].length-badRootSeam)*Boolean(workLayer[sourceParentIndex].position+sourceHeight>=badRootSeam)-(j-sourceHeight):-1;
-            var parentIndex=0;
-            while (result[j][parentIndex]&&result[j][parentIndex].position<parentPosition) parentIndex++;
-            if (!result[j][parentIndex]||result[j][parentIndex].position!=parentPosition) parentIndex=-1;
-            result[j].push({
-              value:parentIndex==-1?newDiagonal[0][workLayer[k].position+(afterCutMountain[0].length-badRootSeam)*i-(j-sourceHeight)+j].value:NaN,
-              position:workLayer[k].position+(afterCutMountain[0].length-badRootSeam)*i-(j-sourceHeight),
-              parentIndex:parentIndex,
-              forcedParent:workLayer[k].forcedParent
-            });
-            k++;
+      for (var j=badRootSeam;j<afterCutLength;j++){ //seam
+        var isAscending;
+        var p=0; //simplified; may not work
+        while (mountain[badRootHeight][p].position+badRootHeight<j) p++;
+        if (mountain[badRootHeight][p].position+badRootHeight==j){
+          while (true){
+            if (!mountain[badRootHeight][p]||mountain[badRootHeight][p].position+badRootHeight<badRootSeam){
+              isAscending=false;
+              break;
+            }
+            if (mountain[badRootHeight][p].position+badRootHeight==badRootSeam){
+              isAscending=true;
+              break;
+            }
+            p=mountain[badRootHeight][p].parentIndex;
           }
-        }else if (j<=badRootHeight+(cutHeight-badRootHeight)*i){ //Br
-          var sourceHeight=badRootHeight;
-          var workLayer=mountain[sourceHeight];
-          var cutWorkLayer=afterCutMountain[sourceHeight];
-          var badRootIndex=0;
-          while (workLayer[badRootIndex]&&workLayer[badRootIndex].position+sourceHeight<badRootSeam) badRootIndex++;
-          var k=badRootIndex;
-          //alert(k+" "+afterCutMountain[j].length)
-          while (k<cutWorkLayer.length){
-            if (!yamakazi&&workLayer[k].position+sourceHeight==badRootSeam&&j>(cutHeight-badRootHeight)*(i-1)+badRootHeight){
-              var sourceParentIndex=mountain[j-(cutHeight-badRootHeight)*(i-1)][mountain[j-(cutHeight-badRootHeight)*(i-1)].length-1].parentIndex;
-              var parentShifts=i-1;
-              var parentPosition=mountain[j-(cutHeight-badRootHeight)*(i-1)][sourceParentIndex]?mountain[j-(cutHeight-badRootHeight)*(i-1)][sourceParentIndex].position+parentShifts*(afterCutMountain[0].length-badRootSeam)-(cutHeight-badRootHeight)*(i-1):-1;
+        }else{
+          isAscending=false;
+        }
+        var seamHeight=afterCutHeight-1;
+        while (true){
+          var l=0;
+          while (mountain[seamHeight][l]&&mountain[seamHeight][l].position+seamHeight<j) l++;
+          if (mountain[seamHeight][l]&&mountain[seamHeight][l].position+seamHeight==j) break;
+          seamHeight--;
+        }
+        seamHeight++;
+        var isReplacingCut=j==badRootSeam;
+        console.log([j,seamHeight]);
+        if (isAscending){
+          for (var k=0;k<seamHeight+(cutHeight-badRootHeight)*i;k++){
+            if (k==3) debugger
+            if (!result[k]) result.push([]);
+            if (k<badRootHeight){ //Bb
+              var sy=k;
+              var sx;
+              if (isReplacingCut){
+                sx=mountain[sy].length-1;
+              }else{
+                sx=0;
+                while (mountain[sy][sx].position+sy<j) sx++;
+              }
+              var sourceParentIndex=mountain[sy][sx].parentIndex;
+              var parentShifts=i-isReplacingCut;
+              var parentPosition=mountain[sy][sourceParentIndex]?mountain[sy][sourceParentIndex].position+parentShifts*(afterCutLength-badRootSeam)*(mountain[sy][sourceParentIndex].position+sy>=badRootSeam)-(k-sy):-1;
               var parentIndex=0;
-              while (result[j][parentIndex]&&result[j][parentIndex].position<parentPosition) parentIndex++;
-              /*if (j==5){
-                alert(mountain[j-(cutHeight-badRootHeight)*(i-1)][mountain[j-(cutHeight-badRootHeight)*(i-1)].length-1].position+(afterCutMountain[0].length-badRootSeam)*(i-1)-(cutHeight-badRootHeight)*(i-1));
-                alert(parentPosition);
-                alert(parentIndex);
-              }*/
-              if (!result[j][parentIndex]||result[j][parentIndex].position!=parentPosition) parentIndex=-1;
-              result[j].push({
-                value:parentIndex==-1?newDiagonal[0][mountain[j-(cutHeight-badRootHeight)*(i-1)][mountain[j-(cutHeight-badRootHeight)*(i-1)].length-1].position+(afterCutMountain[0].length-badRootSeam)*(i-1)-(cutHeight-badRootHeight)*(i-1)+j].value:NaN,
-                position:mountain[j-(cutHeight-badRootHeight)*(i-1)][mountain[j-(cutHeight-badRootHeight)*(i-1)].length-1].position+(afterCutMountain[0].length-badRootSeam)*(i-1)-(cutHeight-badRootHeight)*(i-1),
+              while (result[k][parentIndex]&&result[k][parentIndex].position<parentPosition) parentIndex++;
+              if (!result[k][parentIndex]||result[k][parentIndex].position!=parentPosition) parentIndex=-1;
+              result[k].push({
+                value:parentIndex==-1?newDiagonal[0][j+(afterCutLength-badRootSeam)*i].value:NaN,
+                position:j+(afterCutLength-badRootSeam)*i-k,
                 parentIndex:parentIndex,
-                forcedParent:workLayer[k].forcedParent
+                forcedParent:mountain[sy][sx].forcedParent
               });
-            }else{
-              var sourceParentIndex=workLayer[k].position+sourceHeight==badRootSeam?yamakazi?workLayer[workLayer[workLayer.length-1].parentIndex].parentIndex:j==badRootHeight+(cutHeight-badRootHeight)*i?-1:workLayer[workLayer.length-1].parentIndex:workLayer[k].parentIndex;
-              var parentShifts=workLayer[k].position+sourceHeight==badRootSeam?i-1:i;
-              var parentPosition=workLayer[sourceParentIndex]?workLayer[sourceParentIndex].position+parentShifts*(afterCutMountain[0].length-badRootSeam)*Boolean(workLayer[sourceParentIndex].position+sourceHeight>=badRootSeam)-(j-sourceHeight):-1;
+            }else if (k<=badRootHeight+(cutHeight-badRootHeight)*(i-isReplacingCut)){ //Br replace
+              var sy=badRootHeight;
+              var sx;
+              if (!yamakazi&&isReplacingCut){
+                sx=mountain[sy].length-1;
+              }else{
+                sx=0;
+                while (mountain[sy][sx].position+sy<j) sx++;
+              }
+              var sourceParentIndex=mountain[sy][sx].parentIndex;
+              var parentShifts=i-isReplacingCut;
+              var parentPosition=mountain[sy][sourceParentIndex]?mountain[sy][sourceParentIndex].position+parentShifts*(afterCutLength-badRootSeam)*(mountain[sy][sourceParentIndex].position+sy>=badRootSeam)-(k-sy):-1;
               var parentIndex=0;
-              while (result[j][parentIndex]&&result[j][parentIndex].position<parentPosition) parentIndex++;
-              if (!result[j][parentIndex]||result[j][parentIndex].position!=parentPosition) parentIndex=-1;
-              result[j].push({
-                value:parentIndex==-1?newDiagonal[0][workLayer[k].position+(afterCutMountain[0].length-badRootSeam)*i-(j-sourceHeight)+j].value:NaN,
-                position:workLayer[k].position+(afterCutMountain[0].length-badRootSeam)*i-(j-sourceHeight),
+              while (result[k][parentIndex]&&result[k][parentIndex].position<parentPosition) parentIndex++;
+              if (!result[k][parentIndex]||result[k][parentIndex].position!=parentPosition) parentIndex=-1;
+              result[k].push({
+                value:parentIndex==-1?newDiagonal[0][j+(afterCutLength-badRootSeam)*i].value:NaN,
+                position:j+(afterCutLength-badRootSeam)*i-k,
                 parentIndex:parentIndex,
-                forcedParent:workLayer[k].forcedParent
+                forcedParent:mountain[sy][sx].forcedParent
+              });
+            }else if (isReplacingCut&&k<=badRootHeight+(cutHeight-badRootHeight)*i){ //Br extend
+              var sy=k-(cutHeight-badRootHeight)*(i-1);
+              var sx;
+              if (!yamakazi&&isReplacingCut){
+                sx=mountain[sy].length-1;
+              }else{
+                sx=0;
+                while (mountain[sy][sx].position+sy<j) sx++;
+              }
+              var sourceParentIndex=mountain[sy][sx].parentIndex;
+              var parentShifts=i-isReplacingCut;
+              var parentPosition=mountain[sy][sourceParentIndex]?mountain[sy][sourceParentIndex].position+parentShifts*(afterCutLength-badRootSeam)*(mountain[sy][sourceParentIndex].position+sy>=badRootSeam)-(k-sy):-1;
+              var parentIndex=0;
+              while (result[k][parentIndex]&&result[k][parentIndex].position<parentPosition) parentIndex++;
+              if (!result[k][parentIndex]||result[k][parentIndex].position!=parentPosition) parentIndex=-1;
+              result[k].push({
+                value:parentIndex==-1?newDiagonal[0][j+(afterCutLength-badRootSeam)*i].value:NaN,
+                position:j+(afterCutLength-badRootSeam)*i-k,
+                parentIndex:parentIndex,
+                forcedParent:mountain[sy][sx].forcedParent
+              });
+            }else{ //Be
+              //if (isReplacingCut) console.warn("Climbing doesn't all the way. Makes sense.");
+              var sy=k-(cutHeight-badRootHeight)*i;
+              var sx;
+              if (!yamakazi&&isReplacingCut){
+                sx=mountain[sy].length-1;
+              }else{
+                sx=0;
+                while (mountain[sy][sx].position+sy<j) sx++;
+              }
+              var sourceParentIndex=mountain[sy][sx].parentIndex;
+              var parentShifts=i-isReplacingCut;
+              var parentPosition=mountain[sy][sourceParentIndex]?mountain[sy][sourceParentIndex].position+parentShifts*(afterCutLength-badRootSeam)*(mountain[sy][sourceParentIndex].position+sy>=badRootSeam)-(k-sy):-1;
+              var parentIndex=0;
+              while (result[k][parentIndex]&&result[k][parentIndex].position<parentPosition) parentIndex++;
+              if (!result[k][parentIndex]||result[k][parentIndex].position!=parentPosition) parentIndex=-1;
+              result[k].push({
+                value:parentIndex==-1?newDiagonal[0][j+(afterCutLength-badRootSeam)*i].value:NaN,
+                position:j+(afterCutLength-badRootSeam)*i-k,
+                parentIndex:parentIndex,
+                forcedParent:mountain[sy][sx].forcedParent
               });
             }
-            k++;
           }
-        }else{ //Be
-          var sourceHeight=j-(cutHeight-badRootHeight)*i;
-          var workLayer=mountain[sourceHeight];
-          var cutWorkLayer=afterCutMountain[sourceHeight];
-          var badRootIndex=0;
-          while (workLayer[badRootIndex]&&workLayer[badRootIndex].position+sourceHeight<badRootSeam) badRootIndex++;
-          var k=badRootIndex;
-          //alert(k+" "+afterCutMountain[j].length)
-          while (k<cutWorkLayer.length){
-            var sourceParentIndex=/*workLayer[k].position+sourceHeight==badRootSeam?yamakazi?workLayer[workLayer[workLayer.length-1].parentIndex].parentIndex:workLayer[workLayer.length-1].parentIndex:*/workLayer[k].parentIndex;
-            var parentShifts=/*workLayer[k].position+sourceHeight==badRootSeam?i-1:*/i;
-            var parentPosition=workLayer[sourceParentIndex]?workLayer[sourceParentIndex].position+parentShifts*(afterCutMountain[0].length-badRootSeam)*Boolean(workLayer[sourceParentIndex].position+sourceHeight>=badRootSeam)-(j-sourceHeight):-1;
-            var parentIndex=0;
-            while (result[j][parentIndex]&&result[j][parentIndex].position<parentPosition) parentIndex++;
-            if (!result[j][parentIndex]||result[j][parentIndex].position!=parentPosition) parentIndex=-1;
-            result[j].push({
-              value:parentIndex==-1?newDiagonal[0][workLayer[k].position+(afterCutMountain[0].length-badRootSeam)*i-(j-sourceHeight)+j].value:NaN,
-              position:workLayer[k].position+(afterCutMountain[0].length-badRootSeam)*i-(j-sourceHeight),
-              parentIndex:parentIndex,
-              forcedParent:workLayer[k].forcedParent
-            });
-            k++;
+        }else{
+          if (isReplacingCut) console.warn("Cut child and not connected to bad root. Makes sense.");
+          for (var k=0;k<seamHeight;k++){
+            if (!result[k]) result.push([]);
+            //if statement is here to line up indents
+            if (true){ //Bb
+              var sy=k;
+              var sx;
+              if (isReplacingCut){
+                sx=mountain[sy].length-1;
+              }else{
+                sx=0;
+                while (mountain[sy][sx].position+sy<j) sx++;
+              }
+              var sourceParentIndex=mountain[sy][sx].parentIndex;
+              var parentShifts=i-isReplacingCut;
+              var parentPosition=mountain[sy][sourceParentIndex]?mountain[sy][sourceParentIndex].position+parentShifts*(afterCutLength-badRootSeam)*(mountain[sy][sourceParentIndex].position+sy>=badRootSeam)-(k-sy):-1;
+              var parentIndex=0;
+              while (result[k][parentIndex]&&result[k][parentIndex].position<parentPosition) parentIndex++;
+              if (!result[k][parentIndex]||result[k][parentIndex].position!=parentPosition) parentIndex=-1;
+              result[k].push({
+                value:parentIndex==-1?newDiagonal[0][j+(afterCutLength-badRootSeam)*i].value:NaN,
+                position:j+(afterCutLength-badRootSeam)*i-k,
+                parentIndex:parentIndex,
+                forcedParent:mountain[sy][sx].forcedParent
+              });
+            }
           }
         }
       }
@@ -319,6 +386,7 @@ function expand(s,n,stringify){
       if (!isNaN(result[i][j].value)) continue;
       var k=0; //find left-up
       while (result[i+1][k].position<result[i][j].position-1) k++;
+      if (result[i+1][k].position!=result[i][j].position-1) throw Error("Mountain not complete");
       result[i][j].value=result[i][result[i][j].parentIndex].value+result[i+1][k].value;
     }
   }
