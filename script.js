@@ -41,7 +41,10 @@ function calcMountain(s){
     //assign parents
     var hasNextLayer=false;
     for (var i=0;i<lastLayer.length;i++){
-      if (lastLayer[i].forcedParent) continue;
+      if (lastLayer[i].forcedParent){
+        if (lastLayer[i].parentIndex!=-1) hasNextLayer=true;
+        continue;
+      }
       var p;
       if (calculatedMountain.length==1){
         p=lastLayer[i].position+1;
@@ -331,19 +334,30 @@ function expand(s,n,stringify){
   }
   return rr;
 }
+//Limited to n<=10
+function expandmultilimited(s,nstring){
+  var result=s;
+  for (var i of nstring.split(",")) result=expand(result,Math.min(i,10),true);
+  return result;
+}
+function expandmulti(s,nstring){
+  var result=s;
+  for (var i of nstring.split(",")) result=expand(result,i,true);
+  return result;
+}
 var input="";
-var inputn=3;
+var inputn="3";
 function expandall(){
-  if (input==dg("input").value&&inputn==Math.min(dg("inputn").value,10)) return;
+  if (input==dg("input").value&&inputn==dg("inputn").value) return;
   input=dg("input").value;
-  inputn=Math.min(dg("inputn").value,10);
-  dg("output").value=input.split(lineBreakRegex).map(e=>expand(e,inputn,true)).join("\n");
+  inputn=dg("inputn").value;
+  dg("output").value=input.split(lineBreakRegex).map(e=>expandmultilimited(e,inputn)).join("\n");
 }
 window.onpopstate=function (e){
   load();
   expandall();
 }
-function saveSimple(clipboard){
+/*function saveSimple(clipboard){
   var encodedInput=input.split(lineBreakRegex).map(e=>e.split(itemSeparatorRegex).map(parseSequenceElement).map(e=>e.forcedParent?e.value+"v"+e.parentIndex:e.value)).join(";");
   history.pushState(encodedInput,"","?"+encodedInput);
   if (clipboard){
@@ -372,8 +386,8 @@ function saveDetailed(clipboard){
     document.execCommand("copy");
     copyarea.style.display="none";
   }
-}
-function load(){
+}*/
+function load(){/*
   var encodedState=location.search.substring(1);
   if (!encodedState) return;
   try{
@@ -389,7 +403,7 @@ function load(){
       if (state[i]) dg(i).value=state[i];
     }
   }
-}
+*/}
 var handlekey=function(e){
   setTimeout(expandall,0,true);
 }
